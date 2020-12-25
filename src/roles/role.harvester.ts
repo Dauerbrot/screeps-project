@@ -28,9 +28,8 @@ export class RoleHarvester implements Roles {
         }
       });
       if (targets.length > 0) {
-        const target = targets[0];
-        if (this.creep.transfer(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-          this.creep.moveTo(target, {
+        if (this.creep.transfer(targets[0], RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+          this.creep.moveTo(targets[0], {
             visualizePathStyle: {
               stroke: "#ffffff"
             }

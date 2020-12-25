@@ -5,6 +5,7 @@ interface CreepMemory {
   role: string;
   room?: string;
   working?: boolean;
+  sourceId?: string;
   path?: PathStep[];
 }
 
