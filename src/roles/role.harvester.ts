@@ -10,8 +10,9 @@ export class RoleHarvester implements Roles {
   public runForTick(): void {
     if (this.creep.store.getFreeCapacity() > 0) {
       const sources = this.creep.room.find(FIND_SOURCES);
-      if (this.creep.harvest(sources[0]) === ERR_NOT_IN_RANGE) {
-        this.creep.moveTo(sources[0], {
+      const source = sources[0];
+      if (this.creep.harvest(source) === ERR_NOT_IN_RANGE) {
+        this.creep.moveTo(source, {
           visualizePathStyle: {
             stroke: "#ffaa00"
           }
@@ -27,8 +28,9 @@ export class RoleHarvester implements Roles {
         }
       });
       if (targets.length > 0) {
-        if (this.creep.transfer(targets[0], RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-          this.creep.moveTo(targets[0], {
+        const target = targets[0];
+        if (this.creep.transfer(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+          this.creep.moveTo(target, {
             visualizePathStyle: {
               stroke: "#ffffff"
             }

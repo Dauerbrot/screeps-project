@@ -1,9 +1,10 @@
 import { ErrorMapper } from "utils/ErrorMapper";
 import { RoleHarvester } from "./roles/role.harvester";
 
-const HARVESTER = "harvester";
-
 // When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change
+
+const HARVESTER = "harvester";
+let harvesterCounterName = 0;
 const creepsInGame = Game.creeps;
 type mapIdentifierType = Record<string, RoleHarvester>;
 const mapOfHarvesterCreeps: mapIdentifierType = {};
@@ -19,49 +20,44 @@ function removeMissingCreeps() {
 
 function generateCreepRoleByCreep(creepsInGameElement: Creep) {
   const harvesterName = creepsInGameElement.name.toString();
-  console.log(harvesterName);
-  console.log(mapOfHarvesterCreeps[harvesterName] === undefined);
-  console.log(creepsInGameElement.memory.role);
-  console.log(HARVESTER === creepsInGameElement.memory.role);
+  // fallback when a creep was spawned without a purpose
+  if (creepsInGameElement.memory.role === undefined) {
+    creepsInGameElement.memory.role = HARVESTER;
+  }
+
   if (HARVESTER === creepsInGameElement.memory.role && mapOfHarvesterCreeps[harvesterName] === undefined) {
     mapOfHarvesterCreeps[harvesterName] = new RoleHarvester(creepsInGameElement);
   }
 }
 
-function generateRoleName() {
-  const id = Game.time;
-  const newName = "Harvester" + id.toString(10);
-  console.log("Spawning new harvester: " + newName);
-  return newName;
-}
-
-// This utility uses source maps to get the line numbers and file names of the original, TS source code
-export const loop = ErrorMapper.wrapLoop(() => {
-  const harvesterCounter = _.filter(creepsInGame, creeps => HARVESTER === creeps.memory.role);
-
+function generateHarvesterBySituation(harvesterCounter: Creep[]) {
   for (const spawnsIndex in Game.spawns) {
     const spawn = Game.spawns[spawnsIndex];
     const energy = spawn.energy;
     const energyCapacity = spawn.energyCapacity;
     if (energyCapacity === energy && harvesterCounter.length < 10) {
-      const harvesterName = generateRoleName();
-      console.log("i spawn with the name" + harvesterName);
-      spawnHarvesterCreep(spawn, harvesterName);
+      spawnHarvesterCreep(spawn);
     }
   }
+}
 
-  function spawnHarvesterCreep(spawn: StructureSpawn, newName: string) {
-    spawn.spawnCreep([WORK, CARRY, MOVE], newName, {
-      memory: {
-        role: "harvester"
-      }
-    });
-  }
+function spawnHarvesterCreep(spawn: StructureSpawn) {
+  spawn.spawnCreep([WORK, CARRY, MOVE], "Harvester" + harvesterCounterName.toString(10), {
+    memory: {
+      role: "harvester"
+    }
+  });
+  harvesterCounterName++;
+}
+// This utility uses source maps to get the line numbers and file names of the original, TS source code
+export const loop = ErrorMapper.wrapLoop(() => {
+  const harvesterCounter = _.filter(creepsInGame, creeps => HARVESTER === creeps.memory.role);
 
-  if (harvesterCounter.length < 2) {
-    const newName = generateRoleName();
+  generateHarvesterBySituation(harvesterCounter);
+
+  if (harvesterCounter.length < 3) {
     const spawn = Game.spawns["Spawn1"];
-    spawnHarvesterCreep(spawn, newName);
+    spawnHarvesterCreep(spawn);
   }
   // initialize all creeps as objects
   for (const creepName in creepsInGame) {
@@ -71,6 +67,10 @@ export const loop = ErrorMapper.wrapLoop(() => {
   for (const key in mapOfHarvesterCreeps) {
     mapOfHarvesterCreeps[key].runForTick();
   }
-  console.log(`Current game tick is ${Game.time}`);
+  //showTickFromServer();
   removeMissingCreeps();
 });
+
+function showTickFromServer() {
+  console.log(`Current game tick is ${Game.time}`);
+}
