@@ -1,0 +1,40 @@
+import { Roles } from "../interfaces/roles";
+
+export class RoleHarvester implements Roles {
+  private creep: Creep;
+
+  public constructor(creep: Creep) {
+    this.creep = creep;
+  }
+
+  public runForTick(): void {
+    if (this.creep.store.getFreeCapacity() > 0) {
+      const sources = this.creep.room.find(FIND_SOURCES);
+      if (this.creep.harvest(sources[0]) === ERR_NOT_IN_RANGE) {
+        this.creep.moveTo(sources[0], {
+          visualizePathStyle: {
+            stroke: "#ffaa00"
+          }
+        });
+      }
+    } else {
+      const targets = this.creep.room.find(FIND_STRUCTURES, {
+        filter: structure => {
+          return (
+            (structure.structureType === STRUCTURE_EXTENSION || structure.structureType === STRUCTURE_SPAWN) &&
+            structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+          );
+        }
+      });
+      if (targets.length > 0) {
+        if (this.creep.transfer(targets[0], RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+          this.creep.moveTo(targets[0], {
+            visualizePathStyle: {
+              stroke: "#ffffff"
+            }
+          });
+        }
+      }
+    }
+  }
+}
