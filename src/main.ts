@@ -9,7 +9,8 @@ export const loop = ErrorMapper.wrapLoop(() => {
   // fallback when a creep was spawned without a purpose
   // This utility uses source maps to get the line numbers and file names of the original, TS source code
   const harvesterCounter = _.filter(creepsInGame, creeps => HARVESTER === creeps.memory.role);
-  if (harvesterCounter.length < 2) {
+
+  if (harvesterCounter.length < 2 || determineToCreateANewHarvester(harvesterCounter)) {
     for (const spawnName in Game.spawns) {
       const spawn = Game.spawns[spawnName];
       spawnHarvesterCreep(spawn);
@@ -30,23 +31,33 @@ export const loop = ErrorMapper.wrapLoop(() => {
 });
 
 // Automatically delete memory of missing creeps
-function removeMissingCreeps() {
+function removeMissingCreeps(): void {
   for (const name in Memory.creeps) {
-    if (!(name in creepsInGame)) {
+    console.log(name);
+    if (
+      !(name in creepsInGame) ||
+      creepsInGame[name].memory === undefined ||
+      creepsInGame[name].memory.role === undefined
+    ) {
       delete Memory.creeps[name];
     }
   }
 }
 
-function spawnHarvesterCreep(spawn: StructureSpawn) {
-  const name = "Harvester" + Game.time.toString(10);
-  spawn.spawnCreep([WORK, CARRY, MOVE], name);
+function determineToCreateANewHarvester(harvesterCounter: Creep[]): void {
+  // empty element
 }
 
-function checkSpawningCreep(spawn: StructureSpawn) {
+function spawnHarvesterCreep(spawn: StructureSpawn): void {
+  const name = "Harvester" + Game.time.toString(10);
+  spawn.spawnCreep([WORK, CARRY, MOVE], name, {memory: {role: HARVESTER}});
+}
+
+function checkSpawningCreep(spawn: StructureSpawn): void {
   if (spawn.spawning) {
     const name = spawn.spawning.name;
     const role = creepsInGame[name].memory.role;
+    // in case the role couldn´t be set in the spawning creeper, set it seperately here
     if (role === undefined) {
       creepsInGame[name].memory.role = HARVESTER;
     }
@@ -57,6 +68,6 @@ function checkSpawningCreep(spawn: StructureSpawn) {
   }
 }
 
-function showTickFromServer() {
+function showTickFromServer(): void {
   console.log("Current game tick is " + Game.time.toString(10));
 }

@@ -5,8 +5,10 @@ interface CreepMemory {
   role: string;
   room?: string;
   working?: boolean;
+  // id from which energy source the creep consumes
   sourceId?: string;
-  path?: PathStep[];
+  // id from game objects which will consume the energy
+  targetId?: string;
 }
 
 interface Memory {
