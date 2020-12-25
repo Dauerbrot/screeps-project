@@ -9,13 +9,23 @@ export const loop = ErrorMapper.wrapLoop(() => {
   // fallback when a creep was spawned without a purpose
   // This utility uses source maps to get the line numbers and file names of the original, TS source code
   const harvesterCounter = _.filter(creepsInGame, creeps => HARVESTER === creeps.memory.role);
-  if (harvesterCounter.length < 10) {
+  if (harvesterCounter.length < 2) {
     for (const spawnName in Game.spawns) {
       const spawn = Game.spawns[spawnName];
       spawnHarvesterCreep(spawn);
+      checkSpawningCreep(spawn);
     }
   }
-  showTickFromServer();
+
+  for (const creepName in Game.creeps) {
+    const creep = Game.creeps[creepName];
+
+    if (HARVESTER === creep.memory.role) {
+      RoleHarvester.runHarvester(creep);
+    }
+  }
+
+  // showTickFromServer();
   removeMissingCreeps();
 });
 
@@ -28,28 +38,23 @@ function removeMissingCreeps() {
   }
 }
 
-function generateCreepRoleByCreep(creepsInGameElement: Creep) {
-  const harvesterName = creepsInGameElement.name.toString();
-  const role = new RoleHarvester(creepsInGameElement);
-}
-
-function generateHarvesterBySituation(harvesterCounter: Creep[]) {
-  for (const spawnsIndex in Game.spawns) {
-    const spawn = Game.spawns[spawnsIndex];
-    const energy = spawn.energy;
-    const energyCapacity = spawn.energyCapacity;
-    if (energyCapacity === energy && harvesterCounter.length < 5) {
-      spawnHarvesterCreep(spawn);
-    }
-  }
-}
-
 function spawnHarvesterCreep(spawn: StructureSpawn) {
-  spawn.spawnCreep([WORK, CARRY, MOVE], "Harvester" + Game.time.toString(10), {
-    memory: {
-      role: "harvester"
+  const name = "Harvester" + Game.time.toString(10);
+  spawn.spawnCreep([WORK, CARRY, MOVE], name);
+}
+
+function checkSpawningCreep(spawn: StructureSpawn) {
+  if (spawn.spawning) {
+    const name = spawn.spawning.name;
+    const role = creepsInGame[name].memory.role;
+    if (role === undefined) {
+      creepsInGame[name].memory.role = HARVESTER;
     }
-  });
+    spawn.room.visual.text("building" + name + " with role: " + role, spawn.pos.x + 1, spawn.pos.y, {
+      align: "left",
+      opacity: 0.8
+    });
+  }
 }
 
 function showTickFromServer() {
