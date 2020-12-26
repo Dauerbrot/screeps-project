@@ -40,7 +40,6 @@ export class RoleUpgrader {
             stroke: "#ffffff"
           }
         });
-        creep.upgradeController(creepTarget)
       }
     }
   }
