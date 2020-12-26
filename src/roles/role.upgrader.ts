@@ -1,4 +1,4 @@
-export class RoleHarvester {
+export class RoleUpgrader {
   /**
    * searches for the nearest energy source and use this as your only source in your whole life
    * @param creep creep from game
@@ -30,39 +30,31 @@ export class RoleHarvester {
         });
       }
     } else {
-      const creepTarget = RoleHarvester.getTarget(creep);
+      const creepTarget = RoleUpgrader.getTarget(creep);
       if (creepTarget === null) {
         return;
       }
-      if (creep.transfer(creepTarget, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+      if (creep.upgradeController(creepTarget) === ERR_NOT_IN_RANGE) {
         creep.moveTo(creepTarget, {
           visualizePathStyle: {
             stroke: "#ffffff"
           }
         });
+        creep.upgradeController(creepTarget)
       }
     }
   }
 
-  private static getTarget(creep: Creep): Structure | null {
+  private static getTarget(creep: Creep): StructureController | null {
     if (creep.memory.targetId === undefined) {
-      const targets = creep.room.find(FIND_STRUCTURES, {
-        filter: structure => {
-          return (
-            (structure.structureType === STRUCTURE_EXTENSION || structure.structureType === STRUCTURE_SPAWN) &&
-            structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
-          );
-        }
-      });
-      if (targets.length > 0) {
-        const target = creep.pos.findClosestByRange(targets);
-        creep.memory.targetId = target?.id;
-        return target;
+      const target = creep.room.controller;
+      creep.memory.targetId = target?.id;
+      if (target === undefined) {
+        return null;
       }
+      return target;
     } else {
       return Game.getObjectById(creep.memory.targetId);
     }
-
-    return null;
   }
 }

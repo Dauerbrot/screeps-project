@@ -1,28 +1,47 @@
 import { ErrorMapper } from "utils/ErrorMapper";
 import { RoleHarvester } from "./roles/role.harvester";
+import { RoleUpgrader } from "./roles/role.upgrader";
 
 // When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change
 const HARVESTER = "harvester";
+const UPGRADER = "upgrader";
 const creepsInGame = Game.creeps;
 
-export const loop = ErrorMapper.wrapLoop(() => {
-  // fallback when a creep was spawned without a purpose
-  // This utility uses source maps to get the line numbers and file names of the original, TS source code
-  const harvesterCounter = _.filter(creepsInGame, creeps => HARVESTER === creeps.memory.role);
+function getCreepsFromRole(filterRole: string) {
+  return _.filter(creepsInGame, creeps => filterRole === creeps.memory.role);
+}
 
-  if (harvesterCounter.length < 2 || determineToCreateANewHarvester(harvesterCounter)) {
+function createNewCreep(creepsCounter: Creep[], creepRole: string) {
+  if (creepsCounter.length < 2) {
     for (const spawnName in Game.spawns) {
       const spawn = Game.spawns[spawnName];
-      spawnHarvesterCreep(spawn);
-      checkSpawningCreep(spawn);
+      spawnCreep(spawn, creepRole);
+      checkSpawningCreep(spawn, creepRole);
     }
   }
+}
+
+// This utility uses source maps to get the line numbers and file names of the original, TS source code
+export const loop = ErrorMapper.wrapLoop(() => {
+  const harvesterCounter = getCreepsFromRole(HARVESTER);
+  const upgraderCounter = getCreepsFromRole(UPGRADER);
+  createNewCreep(harvesterCounter, HARVESTER);
+  createNewCreep(upgraderCounter, UPGRADER);
 
   for (const creepName in Game.creeps) {
     const creep = Game.creeps[creepName];
 
-    if (HARVESTER === creep.memory.role) {
-      RoleHarvester.runHarvester(creep);
+    switch (creep.memory.role) {
+      case HARVESTER:
+        RoleHarvester.runCreepLogic(creep);
+        break;
+      case UPGRADER:
+        RoleUpgrader.runCreepLogic(creep);
+        break;
+      default:
+        // creep is incomplete and don't have any purpose
+        creep.suicide();
+        break;
     }
   }
 
@@ -33,12 +52,7 @@ export const loop = ErrorMapper.wrapLoop(() => {
 // Automatically delete memory of missing creeps
 function removeMissingCreeps(): void {
   for (const name in Memory.creeps) {
-    console.log(name);
-    if (
-      !(name in creepsInGame) ||
-      creepsInGame[name].memory === undefined ||
-      creepsInGame[name].memory.role === undefined
-    ) {
+    if (!(name in creepsInGame)) {
       delete Memory.creeps[name];
     }
   }
@@ -48,18 +62,18 @@ function determineToCreateANewHarvester(harvesterCounter: Creep[]): void {
   // empty element
 }
 
-function spawnHarvesterCreep(spawn: StructureSpawn): void {
-  const name = "Harvester" + Game.time.toString(10);
-  spawn.spawnCreep([WORK, CARRY, MOVE], name, {memory: {role: HARVESTER}});
+function spawnCreep(spawn: StructureSpawn, roleCreep: string): void {
+  const name = roleCreep + Game.time.toString(10);
+  spawn.spawnCreep([WORK, CARRY, MOVE], name, {memory: {role: roleCreep}});
 }
 
-function checkSpawningCreep(spawn: StructureSpawn): void {
+function checkSpawningCreep(spawn: StructureSpawn, expectedRole: string): void {
   if (spawn.spawning) {
     const name = spawn.spawning.name;
     const role = creepsInGame[name].memory.role;
-    // in case the role couldn´t be set in the spawning creeper, set it seperately here
+    // in case the role couldn't be set in the spawning creeper, set it separately here
     if (role === undefined) {
-      creepsInGame[name].memory.role = HARVESTER;
+      creepsInGame[name].memory.role = expectedRole;
     }
     spawn.room.visual.text("building" + name + " with role: " + role, spawn.pos.x + 1, spawn.pos.y, {
       align: "left",
