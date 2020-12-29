@@ -75,6 +75,8 @@ export class RoleUpgrader {
       creep.store.getFreeCapacity() === creep.store.getCapacity()
     ) {
       creep.memory.transfer = false;
+      // creep finished upgrade, now tell that the world
+      Memory.lastUpgradeTime = Game.time;
     }
   }
 

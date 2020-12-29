@@ -13,11 +13,20 @@ interface CreepMemory {
   /** Specific properties of harvester **/
   // true = start transfer from resource, false = is completed
   transfer?: boolean;
+
+  /** Specific properties of builder **/
+  // true = start transfer from resource, false = is completed
+  building?: boolean;
+}
+
+interface SpawnMemory {
+  isBuilding: boolean;
 }
 
 interface Memory {
   uuid: number;
   log: any;
+  lastUpgradeTime: number;
 }
 
 // `global` extension samples
