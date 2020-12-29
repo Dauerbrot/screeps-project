@@ -9,6 +9,10 @@ interface CreepMemory {
   sourceId?: string;
   // id from game objects which will consume the energy
   targetId?: string;
+
+  /** Specific properties of harvester **/
+  // true = start transfer from resource, false = is completed
+  transfer?: boolean;
 }
 
 interface Memory {

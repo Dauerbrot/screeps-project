@@ -1,36 +1,47 @@
 export class RoleUpgrader {
   /**
-   * searches for the nearest energy source and use this as your only source in your whole life
+   * searches for the nearest energy source where the free capacity is atleast under 20%, in conclusion the store is
+   * close at max capacity
    * @param creep creep from game
    * @private don´t even think about it
    */
-  private static getSource(creep: Creep): Source | null {
-    if (creep.memory.sourceId === undefined) {
-      const sources = creep.room.find(FIND_SOURCES);
-      const source = creep.pos.findClosestByRange(sources);
-      creep.memory.sourceId = source?.id;
-      return source;
-    } else {
-      return Game.getObjectById(creep.memory.sourceId);
+  private static getSource(creep: Creep): Structure | null {
+    const targets = creep.room.find(FIND_STRUCTURES, {
+      filter: structure => {
+        return (
+          (structure.structureType === STRUCTURE_EXTENSION || structure.structureType === STRUCTURE_SPAWN) &&
+          (structure.store.getFreeCapacity(RESOURCE_ENERGY) / structure.store.getCapacity(RESOURCE_ENERGY)) * 100 < 20
+        );
+      }
+    });
+    if (targets.length > 0) {
+      const sourceStructure = creep.pos.findClosestByRange(targets);
+      creep.memory.sourceId = sourceStructure?.id;
+      return sourceStructure;
     }
+
+    return null;
   }
 
   public static runCreepLogic(creep: Creep): void {
-    if (creep.store.getFreeCapacity() > 0) {
+    this.setMemoryTransferByCapacityStatus(creep);
+    if (creep.store.getFreeCapacity() > 0 && !creep.memory.transfer) {
       const source = this.getSource(creep);
       if (source === null) {
         return;
       }
 
-      if (creep.harvest(source) === ERR_NOT_IN_RANGE) {
+      if (creep.withdraw(source, LOOK_ENERGY, creep.store.getCapacity()) === ERR_NOT_IN_RANGE) {
         creep.moveTo(source, {
           visualizePathStyle: {
             stroke: "#ffaa00"
           }
         });
       }
+      // carry container is full, now upgrade the upgrade structure in this room
     } else {
-      const creepTarget = RoleUpgrader.getTarget(creep);
+      creep.memory.transfer = true;
+      const creepTarget = this.getTarget(creep);
       if (creepTarget === null) {
         return;
       }
@@ -41,6 +52,24 @@ export class RoleUpgrader {
           }
         });
       }
+    }
+  }
+
+  /**
+   * Is atleast 80% of the room energy available,and the upgrader is empty, then allow the upgrader to start a new
+   * expedition to upgrade the upgrader structure
+   * @param creep creep
+   * @private
+   */
+  private static setMemoryTransferByCapacityStatus(creep: Creep) {
+    const structureCapacityStatus = (creep.room.energyAvailable / creep.room.energyCapacityAvailable) * 100;
+    // console.log("Capacity full at " + structureCapacityStatus.toString(10) + "%");
+    if (
+      structureCapacityStatus > 80 &&
+      creep.memory.transfer &&
+      creep.store.getFreeCapacity() === creep.store.getCapacity()
+    ) {
+      creep.memory.transfer = false;
     }
   }
 
