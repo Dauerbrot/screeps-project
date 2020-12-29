@@ -1,6 +1,11 @@
 export class RoleUpgrader {
+  // Capacity in room, when the upgrader should start to be active
+  private static readonly CAPACITY_IN_PERCENTAGE_OF_STRUCTURE = 80;
+  // Determine source capacity free space, which the upgrader should withdrawn from
+  private static readonly PERCENTAGE_OF_FREE_SPACE_IN_STRUCTURE = 20;
+
   /**
-   * searches for the nearest energy source where the free capacity is atleast under 20%, in conclusion the store is
+   * searches for the nearest energy source where the free capacity is at least under 20%, in conclusion the store is
    * close at max capacity
    * @param creep creep from game
    * @private don´t even think about it
@@ -10,7 +15,8 @@ export class RoleUpgrader {
       filter: structure => {
         return (
           (structure.structureType === STRUCTURE_EXTENSION || structure.structureType === STRUCTURE_SPAWN) &&
-          (structure.store.getFreeCapacity(RESOURCE_ENERGY) / structure.store.getCapacity(RESOURCE_ENERGY)) * 100 < 20
+          (structure.store.getFreeCapacity(RESOURCE_ENERGY) / structure.store.getCapacity(RESOURCE_ENERGY)) * 100 <
+            this.PERCENTAGE_OF_FREE_SPACE_IN_STRUCTURE
         );
       }
     });
@@ -56,16 +62,15 @@ export class RoleUpgrader {
   }
 
   /**
-   * Is atleast 80% of the room energy available,and the upgrader is empty, then allow the upgrader to start a new
+   * Is at least 80% of the room energy available,and the upgrader is empty, then allow the upgrader to start a new
    * expedition to upgrade the upgrader structure
    * @param creep creep
    * @private
    */
   private static setMemoryTransferByCapacityStatus(creep: Creep) {
     const structureCapacityStatus = (creep.room.energyAvailable / creep.room.energyCapacityAvailable) * 100;
-    // console.log("Capacity full at " + structureCapacityStatus.toString(10) + "%");
     if (
-      structureCapacityStatus > 80 &&
+      structureCapacityStatus > this.CAPACITY_IN_PERCENTAGE_OF_STRUCTURE &&
       creep.memory.transfer &&
       creep.store.getFreeCapacity() === creep.store.getCapacity()
     ) {
